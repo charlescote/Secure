@@ -78,27 +78,6 @@ public class Secure
 	}
 	
 	
-	public static byte[] hmac_sha1(byte[] in_data) throws Exception {
-		byte[] result = null;
-
-		try{
-			//generate the HMAC key		
-			KeyGenerator theKey = KeyGenerator.getInstance("HMACSHA1");
-			SecretKey secretKey = theKey.generateKey();
-
-			Mac theMac = Mac.getInstance("HMACSHA1");
-			theMac.init(secretKey);
-
-			//create the hash
-			result = theMac.doFinal(in_data);
-		}
-		catch(Exception e){
-			System.out.println(e);
-		}
-		return result;
-	}
-	
-	
 	//compares two digests
 	public static String compareDigests(byte[] digest, byte[] local_digest)
 	{
@@ -111,33 +90,7 @@ public class Secure
 		return "Digests match!";
 	}
 	
-	
-	
-	public static String toHexString(byte[] block) {
-        StringBuffer buf = new StringBuffer();
 
-        int len = block.length;
-
-        for (int i = 0; i < len; i++) {
-             byte2hex(block[i], buf);
-             if (i < len-1) {
-                 buf.append(":");
-             }
-        } 
-        return buf.toString();
-    }
-
-	
-    public static void byte2hex(byte b, StringBuffer buf) {
-        char[] hexChars = { '0', '1', '2', '3', '4', '5', '6', '7', '8',
-                            '9', 'A', 'B', 'C', 'D', 'E', 'F' };
-        int high = ((b & 0xf0) >> 4);
-        int low = (b & 0x0f);
-        buf.append(hexChars[high]);
-        buf.append(hexChars[low]);
-    }
-	
-	
 	
 	
 	public static void main (String args[]) throws Exception 
