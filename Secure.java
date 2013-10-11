@@ -8,8 +8,6 @@ import javax.crypto.spec.*;
 public class Secure
 {
 
-	private static SecretKeySpec sec_key_spec;
-	private static Cipher sec_cipher;
 	private static Hash digestCreator;
 	
 	private static byte[] file_buffer;
@@ -17,48 +15,7 @@ public class Secure
 	private static FileOutputStream outFile;
 	
 	private static final int SHA1_SIZE = 20;
-
 	
-	
-	public static void keyGenerator(byte[] seed) {
-		byte[] key;
-		byte[] key128;
-	
-		//generates key
-		digestCreator = new Hash(seed);
-		key = digestCreator.getDigest();
-		key128 = Arrays.copyOfRange(key, 0, 16);
-		sec_key_spec = new SecretKeySpec(key128, "AES");
-	}
-	
-	
-	//encryption/decryption function
-	public static byte[] aes_crypt(byte[] inFileBuffer, int mode) throws Exception {
-		byte[] converted = null;
-		byte[] iv = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-		IvParameterSpec ivspec = new IvParameterSpec(iv);
-		sec_cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-		try {
-			//set cipher to decrypt mode
-			if (mode == 1) {
-				sec_cipher.init(Cipher.ENCRYPT_MODE, sec_key_spec, ivspec);
-			} else if (mode == 2) {
-				sec_cipher.init(Cipher.DECRYPT_MODE, sec_key_spec, ivspec);
-			}
-			//do decryption
-			converted = sec_cipher.doFinal(inFileBuffer);
-		}
-		catch (BadPaddingException b)
-		{
-			sec_cipher.init(Cipher.ENCRYPT_MODE, sec_key_spec, ivspec);
-			converted = sec_cipher.doFinal(inFileBuffer);
-		}
-		catch(Exception e){
-			System.out.println(e);
-		}
-		
-		return converted;
-	}
 	
 	
 	
@@ -76,7 +33,7 @@ public class Secure
 		inFile.close();
 		
 		outFile = new FileOutputStream(outFilename);
-		
+
 		return file_size;
 	}
 	
@@ -87,10 +44,9 @@ public class Secure
 		byte[] inBuffer;
 		int file_size;
 		
-		digestCreator.update(file_buffer);
+		digestCreator = new Hash(file_buffer);
 		sha1_hash = digestCreator.getDigest();
 		file_size = file_buffer.length;
-		
 		inBuffer = new byte[file_size + SHA1_SIZE];
 		for (int i = 0; i < file_size; i++) {
 			inBuffer[i] = file_buffer[i];
@@ -112,7 +68,7 @@ public class Secure
 		file_size = decrypted.length;
 		message = Arrays.copyOfRange(decrypted, 0, (file_size - SHA1_SIZE));
 		digest = Arrays.copyOfRange(decrypted, (file_size - SHA1_SIZE), file_size);
-		digestCreator.update(message);
+		digestCreator = new Hash(message);
 		local_digest = digestCreator.getDigest();
 		System.out.println(digestCreator.compareDigests(digest, local_digest));
 		
@@ -121,6 +77,7 @@ public class Secure
 	
 	public static void main (String args[]) throws Exception 
 	{	
+		Crypt crypt;
 		byte[] seed;
 		byte[] inBuffer;
 		byte[] outBuffer;
@@ -139,13 +96,14 @@ public class Secure
 			
 			file_intake(file_name);
 			
-			keyGenerator(seed);
-			
 			if (mode == 1) {
+				
 				inBuffer = combineDigest(file_buffer);
-				outBuffer = aes_crypt(inBuffer, mode);
+				crypt = new Crypt(inBuffer, seed, mode);
+				outBuffer = crypt.getConverted();
 			} else {
-				decrypted = aes_crypt(file_buffer, mode);
+				crypt = new Crypt(file_buffer, seed, mode);
+				decrypted = crypt.getConverted();
 				outBuffer = splitDigest(decrypted);
 			}
 			

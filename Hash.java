@@ -29,16 +29,6 @@ public class Hash
 	}
 	
 	
-	public void update(byte[] data)
-	{
-		try {
-			digest = createDigest(data);
-		} catch (Exception e) {
-			System.out.println(e);
-		}
-		
-	}
-	
 	
 	//creates SHA-1 message digest
 	private static byte[] createDigest(byte[] message) throws Exception
