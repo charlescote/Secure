@@ -10,7 +10,7 @@ public class Secure
 
 	private static Hash digestCreator;
 	
-	private static byte[] file_buffer;
+	private static byte[] file_data;
 	private static FileInputStream inFile;
 	private static FileOutputStream outFile;
 	
@@ -19,7 +19,7 @@ public class Secure
 	
 	
 	
-	public static int file_intake (String file_name) throws Exception {
+	public static void file_handler (String file_name) throws Exception {
 		FileInputStream inFile;
 		
 		String[] inFilename = file_name.split("\\.(?=[^\\.]+$)");
@@ -28,13 +28,11 @@ public class Secure
 		
 		//reads message file in buffer
 		int file_size = inFile.available();
-		file_buffer = new byte[file_size];
-		inFile.read(file_buffer);
+		file_data = new byte[file_size];
+		inFile.read(file_data);
 		inFile.close();
 		
 		outFile = new FileOutputStream(outFilename);
-
-		return file_size;
 	}
 	
 	
@@ -44,12 +42,12 @@ public class Secure
 		byte[] inBuffer;
 		int file_size;
 		
-		digestCreator = new Hash(file_buffer);
+		digestCreator = new Hash(file_data);
 		sha1_hash = digestCreator.getDigest();
-		file_size = file_buffer.length;
+		file_size = file_data.length;
 		inBuffer = new byte[file_size + SHA1_SIZE];
 		for (int i = 0; i < file_size; i++) {
-			inBuffer[i] = file_buffer[i];
+			inBuffer[i] = file_data[i];
 		}
 		for (int j = 0; j < SHA1_SIZE; j++) {
 			inBuffer[file_size + j] = sha1_hash[j];
@@ -94,15 +92,14 @@ public class Secure
 				return;
 			}
 			
-			file_intake(file_name);
+			file_handler(file_name);
 			
 			if (mode == 1) {
-				
-				inBuffer = combineDigest(file_buffer);
+				inBuffer = combineDigest(file_data);
 				crypt = new Crypt(inBuffer, seed, mode);
 				outBuffer = crypt.getConverted();
 			} else {
-				crypt = new Crypt(file_buffer, seed, mode);
+				crypt = new Crypt(file_data, seed, mode);
 				decrypted = crypt.getConverted();
 				outBuffer = splitDigest(decrypted);
 			}
