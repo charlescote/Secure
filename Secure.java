@@ -14,48 +14,31 @@ public class Secure
 
 	
 	
-	// encryption function
-	public static byte[] encrypt(byte[] plaintext) throws Exception
-	{
-		byte[] encrypted = null;
+	//decryption function
+	public static byte[] aes_crypt(byte[] inFileBuffer, int mode) throws Exception {
+		byte[] converted = null;
 		byte[] iv = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 		IvParameterSpec ivspec = new IvParameterSpec(iv);
 		try {
-			//set cipher object to encrypt mode
-			sec_cipher.init(Cipher.ENCRYPT_MODE, sec_key_spec, ivspec);
-
-			//create ciphertext
-			encrypted = sec_cipher.doFinal(plaintext);
-		}
-		catch(Exception e) {
-			System.out.println(e);
-		}
-		return encrypted;
-	}
-	
-	
-	//decryption function
-	public static byte[] decrypt(byte[] ciphertext) throws Exception{
-		byte[] decrypted = null;
-		byte[] iv = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-		IvParameterSpec ivspec = new IvParameterSpec(iv);
-		try{
 			//set cipher to decrypt mode
-			sec_cipher.init(Cipher.DECRYPT_MODE, sec_key_spec, ivspec);
-
+			if (mode == 1) {
+				sec_cipher.init(Cipher.ENCRYPT_MODE, sec_key_spec, ivspec);
+			} else if (mode == 2) {
+				sec_cipher.init(Cipher.DECRYPT_MODE, sec_key_spec, ivspec);
+			}
 			//do decryption
-			decrypted = sec_cipher.doFinal(ciphertext);
+			converted = sec_cipher.doFinal(inFileBuffer);
 		}
 		catch (BadPaddingException b)
 		{
 			sec_cipher.init(Cipher.ENCRYPT_MODE, sec_key_spec, ivspec);
-			decrypted = sec_cipher.doFinal(ciphertext);
+			converted = sec_cipher.doFinal(inFileBuffer);
 		}
 		catch(Exception e){
 			System.out.println(e);
 		}
 		
-		return decrypted;
+		return converted;
 	}
 
 	
@@ -77,9 +60,11 @@ public class Secure
 		Hash digestCreator;
 		String outFilename;
 		int file_size;
+		int mode;
 		
 		try {
-			if (!(args[2].equals("1")) && !(args[2].equals("2"))) {
+			mode = Integer.parseInt(args[2]);
+			if ((mode != 1) && (mode != 2)) {
 				return;
 			}
 			
@@ -114,10 +99,10 @@ public class Secure
 					inBuffer[file_size + j] = sha1_hash[j];
 				}
 				
-				outBuffer = encrypt(inBuffer);
+				outBuffer = aes_crypt(inBuffer, mode);
 				
 			} else {
-				decrypted = decrypt(buffer);
+				decrypted = aes_crypt(buffer, mode);
 				file_size = decrypted.length;
 				message = Arrays.copyOfRange(decrypted, 0, (file_size - SHA1_SIZE));
 				digest = Arrays.copyOfRange(decrypted, (file_size - SHA1_SIZE), file_size);
