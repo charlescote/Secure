@@ -57,39 +57,6 @@ public class Secure
 		
 		return decrypted;
 	}
-	
-	
-	
-	//creates SHA-1 message digest
-	private static byte[] createDigest(byte[] message) throws Exception
-	{
-		byte[] hash = null;
-		try{
-			//create message digest object
-			MessageDigest sha1 = MessageDigest.getInstance("SHA1");
-			
-			//make message digest
-			hash = sha1.digest(message);	
-		}
-		catch(NoSuchAlgorithmException nsae) {
-			System.out.println(nsae);
-		}
-		return hash;
-	}
-	
-	
-	//compares two digests
-	public static String compareDigests(byte[] digest, byte[] local_digest)
-	{
-		for (int i = 0; i < SHA1_SIZE; i++)
-		{
-			if (digest[i] != local_digest[i]) {
-				return "Digests don't match; your file may have been tampered with.";
-			}
-		}
-		return "Digests match!";
-	}
-	
 
 	
 	
@@ -107,6 +74,7 @@ public class Secure
 		byte[] buffer;
 		byte[] message;
 		byte[] decrypted;
+		Hash digestCreator;
 		String outFilename;
 		int file_size;
 		
@@ -127,14 +95,16 @@ public class Secure
 			inFile.close();
 			
 			//generates key
-			key = createDigest(args[1].getBytes("us-ascii"));
+			digestCreator = new Hash(args[1].getBytes("us-ascii"));
+			key = digestCreator.getDigest();
 			key128 = Arrays.copyOfRange(key, 0, 16);
 			sec_key_spec = new SecretKeySpec(key128, "AES");
 			sec_cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
 			
 			if (args[2].equals("1")) {
 				//creates sha1 digest from message
-				sha1_hash = createDigest(buffer);
+				digestCreator.update(buffer);
+				sha1_hash = digestCreator.getDigest();
 				
 				inBuffer = new byte[file_size + SHA1_SIZE];
 				for (int i = 0; i < file_size; i++) {
@@ -151,8 +121,9 @@ public class Secure
 				file_size = decrypted.length;
 				message = Arrays.copyOfRange(decrypted, 0, (file_size - SHA1_SIZE));
 				digest = Arrays.copyOfRange(decrypted, (file_size - SHA1_SIZE), file_size);
-				local_digest = createDigest(message);
-				System.out.println(compareDigests(digest, local_digest));
+				digestCreator.update(message);
+				local_digest = digestCreator.getDigest();
+				System.out.println(digestCreator.compareDigests(digest, local_digest));
 				outBuffer = message;
 			}
 			
